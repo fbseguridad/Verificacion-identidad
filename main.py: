@@ -1,0 +1,50 @@
+import os, time, json, random
+
+# --- RADAR DE NODOS ---
+NODOS = [
+    "https://bsc-dataseed.binance.org/",
+    "https://rpc.ankr.com/bsc",
+    "https://1rpc.io/bnb"
+]
+
+# Prefijos de contratos comunes donde queda "polvo"
+PREFIJOS = ["0x00000000", "0xdead0000", "0xbbbbbbbb"]
+
+def generar_objetivo_inteligente():
+    # Genera direcciones que empiezan con prefijos conocidos de bots
+    prefijo = random.choice(PREFIJOS)
+    resto = "".join(random.choice("0123456789abcdef") for _ in range(42 - len(prefijo)))
+    return prefijo + resto
+
+def consultar_saldo(address):
+    url = random.choice(NODOS)
+    payload = {"jsonrpc":"2.0","method":"eth_getBalance","params":[address,"latest"],"id":1}
+    cmd = f"curl -s --connect-timeout 2 --max-time 3 -X POST -H 'Content-Type: application/json' --data '{json.dumps(payload)}' {url}"
+    try:
+        res = os.popen(cmd).read()
+        if not res or "result" not in res: return None
+        return int(json.loads(res)['result'], 16)
+    except: return None
+
+def ejecutar():
+    print("\033[92m[+] MOTOR SVR-2: BARRIDO POR OBJETIVOS ACTIVADO [+]\033[0m")
+    total, hits = 0, 0
+    while True:
+        addr = generar_objetivo_inteligente()
+        saldo = consultar_saldo(addr)
+        total += 1
+        
+        if saldo is not None:
+            # Si el saldo es mayor a 0.001 BNB (aproximadamente)
+            if saldo > 1000000000000000: 
+                print(f"\n\033[93m[!!!] ¡VALOR ENCONTRADO! {addr} | Saldo: {saldo}\033[0m")
+                hits += 1
+                with open("cosecha.log", "a") as f: f.write(f"{addr}:{saldo}\n")
+            else:
+                print(f"\033[94m[*] Escaneando Radar...\033[0m Total: {total} | Hits: {hits}", end="\r")
+        
+        # Eliminamos el sleep para máxima potencia
+        if total % 100 == 0: time.sleep(0.1)
+
+if __name__ == "__main__":
+    ejecutar()
